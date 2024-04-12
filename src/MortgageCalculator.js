@@ -9,8 +9,11 @@ export class MortgageCalculator extends LitElement {
 
   static get properties() {
     return {
+      minimumDwellingValueError: { state: true },
       minimumSavingError: { state: true },
+      tooMuchSavingsError: { state: true },
       yearsError: { state: true },
+      insufficientNetIncomeError: { state: true },
       monthlyMortgageCost: { state: true },
       totalMortgageValue: { state: true },
       totalMonthly: { state: true },
@@ -23,8 +26,11 @@ export class MortgageCalculator extends LitElement {
 
   constructor() {
     super()
+    this.minimumDwellingValueError = false
     this.minimumSavingError = false
+    this.tooMuchSavingsError = false
     this.yearsError = false
+    this.insufficientNetIncomeError = false
     this.monthlyMortgageCost = 0
     this.totalMortgageValue = 0
     this.totalMonthly = 0
@@ -143,6 +149,13 @@ export class MortgageCalculator extends LitElement {
       this.yearsError = false
     }
 
+    if (this.savingsProvided > this.dwellingValue) {
+      this.tooMuchSavingsError = true
+      return
+    } else {
+      this.tooMuchSavingsError = false
+    }
+
     const debtRadio = this.loansAmount / this.monthlyNetIncome
     const monthlyInterest = this.interest / 1200
     this.totalMonthly = this.yearsMortgage * 12
@@ -175,11 +188,42 @@ export class MortgageCalculator extends LitElement {
 
     const M = (P * r * Math.pow(1 + r, n)) / (Math.pow(1 + r, n) - 1)
 
+    const debtCalculation = M + this.loansAmount
+
+    if (debtCalculation / this.monthlyNetIncome > 0.35) {
+      this.insufficientNetIncomeError = true
+      return
+    } else {
+      this.insufficientNetIncomeError = false
+    }
+
     this.monthlyMortgageCost = M
     this.financingPercentage =
       (this.totalMortgageValue / this.dwellingValue) * 100
     this.totalMortgageCost = M * this.totalMonthly
     this.totalDwellingCost = this.totalMortgageCost + this.savingsProvided
+  }
+
+  __onChangeAge(event) {
+    event.preventDefault()
+
+    const age = parseInt(event.target.value)
+
+    if (age < 18) {
+      event.target.value = 18
+    }
+  }
+
+  __onChangeDwellingValue(event) {
+    event.preventDefault()
+
+    const value = Number(event.target.value)
+
+    if (value < 40000) {
+      this.minimumDwellingValueError = true
+    } else {
+      this.minimumDwellingValueError = false
+    }
   }
 
   render() {
@@ -202,6 +246,7 @@ export class MortgageCalculator extends LitElement {
                 value="${this.age}"
                 required
                 @input=${this.__handleAgeInput}
+                @change=${this.__onChangeAge}
               />
             </div>
 
@@ -210,10 +255,17 @@ export class MortgageCalculator extends LitElement {
               <input
                 type="text"
                 id="monthly-net-income"
+                class=${this.insufficientNetIncomeError ? 'input-error' : ''}
                 value="${this.monthlyNetIncome}"
                 required
                 @input=${this.__handleMonthlyNetIncomeInput}
               />
+              ${this.insufficientNetIncomeError
+                ? html`<p class="net-income-value-error notification-error">
+                    La cuota mensual de tu hipoteca supera el 35% de tus
+                    ingresos netos mensuales
+                  </p>`
+                : ''}
             </div>
 
             <div class="loans-amount data-inputs">
@@ -241,12 +293,19 @@ export class MortgageCalculator extends LitElement {
               <input
                 type="text"
                 id="dwelling-value"
+                class=${this.minimumDwellingValueError ? 'input-error' : ''}
                 required
                 min="40000"
                 max="4000000"
                 value="${this.dwellingValue}"
                 @input=${this.__handleDwellingValueInput}
+                @change=${this.__onChangeDwellingValue}
               />
+              ${this.minimumDwellingValueError
+                ? html`<p class="dwelling-value-error notification-error">
+                    El valor de la vivienda debe ser superior a 40.000€
+                  </p>`
+                : ''}
             </div>
 
             <div class="savings-provided data-inputs">
@@ -254,6 +313,9 @@ export class MortgageCalculator extends LitElement {
               <input
                 type="text"
                 id="savings-provided"
+                class=${this.minimumSavingError || this.tooMuchSavingsError
+                  ? 'input-error'
+                  : ''}
                 value="${this.savingsProvided}"
                 @input=${this.__handleSavingsProvidedInput}
               />
@@ -261,6 +323,11 @@ export class MortgageCalculator extends LitElement {
                 ? html`<p class="savings-error notification-error">
                     Tus ahorros deben ser superiores al 15% del valor de la
                     vivienda
+                  </p>`
+                : ''}
+              ${this.tooMuchSavingsError
+                ? html`<p class="savings-error notification-error">
+                    Tu ahorro aportado no puede superar el valor de la vivienda
                   </p>`
                 : ''}
             </div>
@@ -271,6 +338,7 @@ export class MortgageCalculator extends LitElement {
               <input
                 type="range"
                 id="years-mortgage"
+                class=${this.yearsError ? 'input-error' : ''}
                 min="5"
                 max="40"
                 value="25"

@@ -131,13 +131,17 @@ export const mortgageStyle = css`
     cursor: pointer;
   }
 
+  .input-error {
+    border: 3px solid #ff0000;
+  }
+
   .notification-error {
-    border: 1px solid red;
-    color: red;
-    padding: 0.3rem;
-    background-color: #fff;
+    color: #ff0000;
+    padding: 0.2rem;
+    background-color: rgb(255 255 255 / 58%);
     border-radius: 5px;
     font-weight: bold;
+    margin-top: 0.5rem;
   }
 
   button {
