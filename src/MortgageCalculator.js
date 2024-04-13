@@ -90,10 +90,6 @@ export class MortgageCalculator extends LitElement {
     }
   }
 
-  __handleInterestInput(event) {
-    this.interest = Number(event.target.value)
-  }
-
   __handleMonthlyNetIncomeInput(event) {
     const stringValueFormated = this.__formatInputNumbers(event)
     const intValue = parseInt(stringValueFormated)
@@ -138,6 +134,10 @@ export class MortgageCalculator extends LitElement {
     this.yearsMortgage = parseInt(event.target.value)
   }
 
+  __handleInterestInput(event) {
+    this.interest = Number(event.target.value)
+  }
+
   __handleFormSubmit(event) {
     event && event.preventDefault()
 
@@ -149,7 +149,7 @@ export class MortgageCalculator extends LitElement {
       this.yearsError = false
     }
 
-    if (this.savingsProvided > this.dwellingValue) {
+    if (this.savingsProvided > this.dwellingValue || this.dwellingValue === 0) {
       this.tooMuchSavingsError = true
       return
     } else {
@@ -207,15 +207,39 @@ export class MortgageCalculator extends LitElement {
   __onChangeAge(event) {
     event.preventDefault()
 
+    if (event.target.value === '') {
+      event.target.value = 0
+      this.age = 0
+    }
+
     const age = parseInt(event.target.value)
 
     if (age < 18) {
       event.target.value = 18
+      this.age = 18
+    }
+  }
+
+  __onChangeEmptyValue(event) {
+    event.preventDefault()
+
+    const element = this.shadowRoot.getElementById(event.target.id)
+
+    if (element.value === '') {
+      element.value = 0
+      element.dispatchEvent(
+        new Event('input', { bubbles: true, composed: true })
+      )
     }
   }
 
   __onChangeDwellingValue(event) {
     event.preventDefault()
+
+    if (event.target.value === '') {
+      event.target.value = 0
+      this.dwellingValue = 0
+    }
 
     const value = Number(event.target.value)
 
@@ -259,6 +283,7 @@ export class MortgageCalculator extends LitElement {
                 value="${this.monthlyNetIncome}"
                 required
                 @input=${this.__handleMonthlyNetIncomeInput}
+                @change=${this.__onChangeEmptyValue}
               />
               ${this.insufficientNetIncomeError
                 ? html`<p class="net-income-value-error notification-error">
@@ -275,6 +300,7 @@ export class MortgageCalculator extends LitElement {
                 id="loans-amount"
                 value="${this.loansAmount}"
                 @input=${this.__handleLoansAmountInput}
+                @change=${this.__onChangeEmptyValue}
               />
             </div>
 
@@ -285,6 +311,7 @@ export class MortgageCalculator extends LitElement {
                 id="assets-value"
                 value="${this.assetsValue}"
                 @input=${this.__handleAssetsValueInput}
+                @change=${this.__onChangeEmptyValue}
               />
             </div>
 
@@ -318,6 +345,7 @@ export class MortgageCalculator extends LitElement {
                   : ''}
                 value="${this.savingsProvided}"
                 @input=${this.__handleSavingsProvidedInput}
+                @change=${this.__onChangeEmptyValue}
               />
               ${this.minimumSavingError
                 ? html`<p class="savings-error notification-error">
@@ -369,7 +397,7 @@ export class MortgageCalculator extends LitElement {
               <input
                 type="range"
                 id="interest"
-                min="0"
+                min="0.1"
                 max="8"
                 value="${this.interest}"
                 step="0.001"
@@ -377,7 +405,7 @@ export class MortgageCalculator extends LitElement {
                 @input=${this.__handleInterestInput}
               />
               <datalist id="interest-ticks">
-                <option value="0" label="0%"></option>
+                <option value="0.1" label="0%"></option>
                 <option value="1"></option>
                 <option value="2"></option>
                 <option value="3"></option>
